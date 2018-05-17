@@ -87,40 +87,35 @@ print ("----------------------")
 print ("   Start training...  ")
 print ("----------------------")
 
-batch_size = 1000
+batch_size = 20
 
 entrenografic=[]
-errorsentrenografic=[]
-
 validaciongrafic=[]
-errorsvalidagrafic=[]
-last=sys.maxsize
+errorsvalidagrafic=0
+erroranterior=0.
+erroractual=100.
 epoch=0
-now=0
 
-
-while now > 0.001*last + last or now < last - 0.001*last:
-    last=now
+#Cuando la diferencia con respecto al error anterior
+while (abs(erroractual-erroranterior)) > 0.01:
     for jj in range(len(train_x) // batch_size):
         batch_xs = train_x[jj * batch_size: jj * batch_size + batch_size]
         batch_ys = train_y[jj * batch_size: jj * batch_size + batch_size]
         sess.run(train, feed_dict={x: batch_xs, y_: batch_ys})
 
-    now=sess.run(loss, feed_dict={x: batch_xs, y_: batch_ys})
     # Error del entreno
-    print("Entreno")
-    errorsentrenografic = sess.run(loss, feed_dict={x: batch_xs, y_: batch_ys})
-    entrenografic.append(errorsentrenografic)
-    print("Epoch #:", epoch, "Error: ", errorsentrenografic)# Imprime el error del entreno
+    erroractual = sess.run(loss, feed_dict={x: batch_xs, y_: batch_ys})
+    entrenografic.append(erroractual)
+    if epoch >1: # te aseguras que hay minimo 2 errores para coger el anterior al actual
+        erroranterior=entrenografic[-2]
 
-
-
-    # Error de la validacion
     print("Validacion")
+    print("Epoch #:", epoch, "Error: ", erroractual)# Imprime el error del entreno
+
     errorsvalidagrafic = sess.run(loss, feed_dict={x: val_x, y_: val_y})
     validaciongrafic.append(errorsvalidagrafic)
-    print("Epoch #:", epoch, "Error: ", errorsvalidagrafic)
 
+    print("Epoch #:", epoch, "Error: ", errorsvalidagrafic)
     epoch+=1
 
 
@@ -135,7 +130,7 @@ print ("Pruebas")
 error=0
 acierto=0
 result = sess.run(y, feed_dict={x: test_x})
-i=1
+
 for b, r in zip(test_y, result):
     #print( b, "-->", r)
     if np.argmax(b) != np.argmax(r):
@@ -143,12 +138,13 @@ for b, r in zip(test_y, result):
         error +=1
     else:
         acierto +=1
-    i+=1
 #print ("Errores totales=", error)
 #print ("Aciertos totales=", acierto)
 
-print ("Porcentaje errores=", (error*100)/(error+acierto),"%")
-print ("Porcentaje aciertos=",(acierto*100)/(error+acierto),"%")
+print ("Porcentaje test errores=", (error*100)/(error+acierto),"%")
+print ("Porcentaje test aciertos=",(acierto*100)/(error+acierto),"%")
+
+
 
 
 
@@ -159,9 +155,16 @@ print ("Porcentaje aciertos=",(acierto*100)/(error+acierto),"%")
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 
+plt.title("Entreno")
 plt.plot(entrenografic)# Mostramos la gráica de los errores del entreno
 #plt.plot(validaciongrafic) # Mostramos la gráica de los errores de la validacion
 plt.show()
+
+plt.title("Validacion")
+plt.plot(validaciongrafic)# Mostramos la gráica de los errores del entreno
+plt.plot(validaciongrafic) # Mostramos la gráica de los errores de la validacion
+plt.show()
+
 #plt.imshow(train_x[57].reshape((28, 28)), cmap=cm.Greys_r)
 #plt.imshow(train_x[57].reshape((28, 28)), cmap=cm.Greys_r)
 #plt.show()  # Let's see a sample
