@@ -9,6 +9,7 @@ import numpy as np
 
 # Translate a list of labels into an array of 0's and one 1.
 # i.e.: 4 -> [0,0,0,0,1,0,0,0,0,0]
+# Devuelve una matriz de la quinta columna pasada a binario para tener la codificacion de los tipos
 def one_hot(x, n):
     """
     :param x: label (int)
@@ -48,10 +49,11 @@ y_ = tf.placeholder("float", [None, 10])  # labels
 #Declaramos la variable w (tensor de pesos)
 #Luego declaramos la variable b (tensor de sesgo)
 
+# Esto hace referencia a la entrada
 W1 = tf.Variable(np.float32(np.random.rand(784, 5)) * 0.1)
 b1 = tf.Variable(np.float32(np.random.rand(5)) * 0.1)
 
-
+# Esto hace referencia a la salida de las neuronas
 W2 = tf.Variable(np.float32(np.random.rand(5, 10)) * 0.1)
 b2 = tf.Variable(np.float32(np.random.rand(10)) * 0.1)
 
@@ -61,12 +63,13 @@ h = tf.nn.sigmoid(tf.matmul(x, W1) + b1)
 # Sin embargo, estas estimaciones son un poco difíciles de interpretar, dado que los números que se obtienen pueden ser muy pequeños o muy grandes.
 # Softmax: normalizar los valores para que cada fila de la matriz todos sus valores sumen uno.
 # así el valor de cada elemento de la matriz esté restringido entre cero y uno
+#Normalizamos los valores de la matriz [0,0,0,0,1,0,0,0]
 y = tf.nn.softmax(tf.matmul(h, W2) + b2)
 
 #Suma de los cuadrados
 loss = tf.reduce_sum(tf.square(y_ - y))
 
-# Tenga en cuenta que la optimización no se realiza en este momento.
+# Tener en cuenta que la optimización no se realiza en este momento.
 # Simplemente agregamos el objeto optimizador al gráfico TensorFlow para su posterior ejecución.
 train = tf.train.GradientDescentOptimizer(0.01).minimize(loss)  # learning rate: 0.01
 
@@ -84,12 +87,17 @@ print ("----------------------")
 print ("   Start training...  ")
 print ("----------------------")
 
-batch_size = 20
-# Entero más grande admitido
-last= sys.maxsize
-errorsgrafic=[]
-now=0
+batch_size = 1000
+
+entrenografic=[]
+errorsentrenografic=[]
+
+validaciongrafic=[]
+errorsvalidagrafic=[]
+last=sys.maxsize
 epoch=0
+now=0
+
 
 while now > 0.001*last + last or now < last - 0.001*last:
     last=now
@@ -98,11 +106,23 @@ while now > 0.001*last + last or now < last - 0.001*last:
         batch_ys = train_y[jj * batch_size: jj * batch_size + batch_size]
         sess.run(train, feed_dict={x: batch_xs, y_: batch_ys})
 
-    #print("Validacion")
-    now = sess.run(loss, feed_dict={x: val_x, y_: val_y})
-    errorsgrafic.append(now)
-    print("Epoch #:", epoch, "Error: ", now)
+    now=sess.run(loss, feed_dict={x: batch_xs, y_: batch_ys})
+    # Error del entreno
+    print("Entreno")
+    errorsentrenografic = sess.run(loss, feed_dict={x: batch_xs, y_: batch_ys})
+    entrenografic.append(errorsentrenografic)
+    print("Epoch #:", epoch, "Error: ", errorsentrenografic)# Imprime el error del entreno
+
+
+
+    # Error de la validacion
+    print("Validacion")
+    errorsvalidagrafic = sess.run(loss, feed_dict={x: val_x, y_: val_y})
+    validaciongrafic.append(errorsvalidagrafic)
+    print("Epoch #:", epoch, "Error: ", errorsvalidagrafic)
+
     epoch+=1
+
 
     # result = sess.run(y, feed_dict={x: val_x})
     # for b, r in zip(val_y, result):
@@ -111,18 +131,24 @@ while now > 0.001*last + last or now < last - 0.001*last:
 
 
 
-
 print ("Pruebas")
 error=0
+acierto=0
 result = sess.run(y, feed_dict={x: test_x})
 i=1
 for b, r in zip(test_y, result):
     #print( b, "-->", r)
     if np.argmax(b) != np.argmax(r):
         #print("---> Error")
-        error = error + 1
+        error +=1
+    else:
+        acierto +=1
     i+=1
-print ("Errores totales=", error)
+#print ("Errores totales=", error)
+#print ("Aciertos totales=", acierto)
+
+print ("Porcentaje errores=", (error*100)/(error+acierto),"%")
+print ("Porcentaje aciertos=",(acierto*100)/(error+acierto),"%")
 
 
 
@@ -133,7 +159,8 @@ print ("Errores totales=", error)
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 
-plt.plot(errorsgrafic)
+plt.plot(entrenografic)# Mostramos la gráica de los errores del entreno
+#plt.plot(validaciongrafic) # Mostramos la gráica de los errores de la validacion
 plt.show()
 #plt.imshow(train_x[57].reshape((28, 28)), cmap=cm.Greys_r)
 #plt.imshow(train_x[57].reshape((28, 28)), cmap=cm.Greys_r)
